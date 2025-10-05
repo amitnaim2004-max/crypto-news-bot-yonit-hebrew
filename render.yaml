@@ -8,6 +8,6 @@ services:
     startCommand: "python crypto-news-bot.py"
     envVars:
       - key: TELEGRAM_BOT_TOKEN
-        value: "הדבק כאן את הטוקן שלך מהבוט"
+        value: "8073497424:AAFrCzbh556MKLMuc6gji338qJxBhRR2vhg"
       - key: TELEGRAM_CHAT_ID
         value: "@Belivion_IL"
