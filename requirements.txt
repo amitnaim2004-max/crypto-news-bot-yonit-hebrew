@@ -1,0 +1,55 @@
+TELEGRAM_BOT_TOKEN=8073497424:AAFrCzbh556MKLMuc6gji338qJxBhRR2vhg
+TELEGRAM_CHAT_ID=@Belivion_IL
+import os, time, requests, hashlib, sqlite3
+from datetime import datetime
+import feedparser
+
+TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+CHAT = os.getenv("TELEGRAM_CHAT_ID")
+TELEGRAM_URL = f"https://api.telegram.org/bot{TOKEN}/sendMessage"
+
+DB = "sent_items.db"
+conn = sqlite3.connect(DB, check_same_thread=False)
+c = conn.cursor()
+c.execute("""CREATE TABLE IF NOT EXISTS sent (id TEXT PRIMARY KEY, title TEXT, url TEXT, sent_at TIMESTAMP)""")
+conn.commit()
+
+def already_sent(item_id):
+    c.execute("SELECT 1 FROM sent WHERE id = ?", (item_id,))
+    return c.fetchone() is not None
+
+def mark_sent(item_id, title, url):
+    c.execute("INSERT OR IGNORE INTO sent (id, title, url, sent_at) VALUES (?, ?, ?, ?)",
+              (item_id, title, url, datetime.utcnow()))
+    conn.commit()
+
+def send_telegram(text):
+    payload = {"chat_id": CHAT, "text": text, "parse_mode": "HTML"}
+    r = requests.post(TELEGRAM_URL, json=payload)requests
+feedparser
+
+    return r.ok
+
+def fetch_news():
+    rss_feeds = [
+        "https://www.geektime.co.il/feed/",
+        "https://cryptocurrency.co.il/feed/",
+        "https://www.cryptojungle.co.il/feed/",
+        "https://www.globes.co.il/webservice/rss/rssfeeder.asmx/FeederNode?i=3188"
+    ]
+    for feed_url in rss_feeds:
+        feed = feedparser.parse(feed_url)
+        for entry in feed.entries[:3]:
+            uid = hashlib.md5(entry.link.encode()).hexdigest()
+            if already_sent(uid):
+                continue
+            text = f"📰 <b>{entry.title}</b>\n\n<a href='{entry.link}'>קרא עוד באתר</a>"
+            if send_telegram(text):
+                mark_sent(uid, entry.title, entry.link)
+            time.sleep(2)
+
+if __name__ == "__main__":
+    print("🤖 בוט חדשות קריפטו בעברית רץ בהצלחה!")
+    while True:
+        fetch_news()
+        time.sleep(300)  # מריץ כל 5 דקות
